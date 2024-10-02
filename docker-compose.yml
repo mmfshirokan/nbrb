@@ -1,0 +1,48 @@
+version: '3'
+services:
+  mysql:
+    image: mysql:latest
+    container_name: 'mysql'
+    environment:
+      MYSQL_DATABASE: 'db'
+      MYSQL_USER: 'user'
+      MYSQL_PASSWORD: 'password'
+      MYSQL_ROOT_PASSWORD: 'password'
+    restart: 'unless-stopped'
+    ports:
+      - '3306:3306'
+    networks:
+      - nbrb
+
+
+  flyway:
+    image: flyway/flyway:latest
+    container_name: flyway
+    volumes:
+      - ./migrations:/app/sql
+    environment:
+      FLYWAY_CONNECT_RETRIES: 60
+      FLYWAY_LOCATIONS: filesystem:/app/sql
+    command: -url=jdbc:mysql://mysql/db?allowPublicKeyRetrieval=true -user=user -password=password -connectRetries=10 migrate
+    depends_on:
+      - mysql
+    networks:
+      - nbrb
+
+  nbrb-server:
+    container_name: "nbrb-server"
+    build: ./
+    environment:
+      MYSQL_URL: "user:password@tcp(mysql:3306)/db"
+      SERVER_PORT: ":8080"
+      SOURCE_URL: "https://api.nbrb.by/exrates/rates?periodicity=0"
+    ports:
+      - '8080:8080'
+    restart: 'unless-stopped'
+    depends_on:
+      - mysql
+    networks:
+      - nbrb
+
+networks:
+  nbrb:
