@@ -54,15 +54,7 @@ func (c *Consumer) Consume(ctx context.Context, target string) {
 
 	reqAndSave()
 
-	tiker := time.NewTicker(
-		time.Date(
-			time.Now().Year(),
-			time.Now().Month(),
-			time.Now().Day()+1,
-			0, 0, 1, 0,
-			time.UTC,
-		).Sub(time.Now().UTC()),
-	)
+	tiker := time.NewTicker(tillNextDayUTC())
 
 	for {
 		select {
@@ -73,10 +65,20 @@ func (c *Consumer) Consume(ctx context.Context, target string) {
 			}
 		case <-tiker.C:
 			{
-				tiker.Reset(time.Hour * 24)
 				reqAndSave()
+				tiker.Reset(tillNextDayUTC())
 			}
 		}
 	}
 
+}
+
+func tillNextDayUTC() time.Duration {
+	return time.Date(
+		time.Now().Year(),
+		time.Now().Month(),
+		time.Now().Day()+1,
+		0, 0, 1, 0,
+		time.UTC,
+	).Sub(time.Now().UTC())
 }
